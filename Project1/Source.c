@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 			break;
 
 		case 3:
+			writeFileHandler(currentFile, currentFileName);
 			break;
 
 		case 99:

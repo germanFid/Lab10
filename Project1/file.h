@@ -4,7 +4,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "ui.h"
+
 #define FILE_OP_SUCCESS 0
+#define FILE_OP_FAIL -1
 
 #define STR_BUFFER_LEN 250
 
@@ -67,5 +70,23 @@ int printFile(FILE* ptr) // printing file line by line
 		return err;
 	}
 
+	return 0;
+}
+
+int writeFile(FILE* ptr, char* str)
+{
+	if (ptr == NULL)
+	{
+		return FILE_OP_FAIL;
+	}
+
+	int result = fseek(ptr, 0, SEEK_SET);
+
+	if (result)
+	{
+		return result;
+	}
+
+	fprintf_s(ptr, "%s", str);
 	return 0;
 }

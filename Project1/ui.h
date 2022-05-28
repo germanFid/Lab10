@@ -130,6 +130,67 @@ void displayFileHandler(FILE* ptr, char* filename)
 	waitForKey();
 }
 
+void writeFileHandler(FILE* ptr, char* filename)
+{
+	int fileOpenedFlag = 0;
+	if (ptr == NULL)
+	{
+		ptr = openFileHandler(filename);
+		fileOpenedFlag = 1;
+
+		if (ptr == NULL)
+		{
+			return;
+		}
+	}
+
+	char* str = (char*)malloc(PATH_DEFAULT_SIZE);
+	int result;
+
+	system("cls");
+	printf("Enter string to write (less than 250 symbols!)\n");
+
+	do
+	{
+		printf("\n>");
+		result = getString(str, PATH_DEFAULT_SIZE);
+
+		if (result == GETSTRING_ERR_OVERFLOW)
+		{
+			printf("You've entered too many symbols!\n");
+		}
+
+		if (result == GETSTRING_ERR_RE)
+		{
+			printf("Reading Error!\n");
+		}
+
+	} while (result != 0);
+
+	fclose(ptr);
+	fopen_s(&ptr, filename, "w");
+
+	result = writeFile(ptr, str);
+	if (result)
+	{
+		if (result == 13)
+			printf("Access Error!");
+		else
+			printf("Writing error!");
+	}
+
+	fclose(ptr);
+	if (fileOpenedFlag)
+	{
+		ptr = NULL;
+	}
+
+	else
+	{
+		fopen_s(&ptr, filename, "r+");
+	}
+}
+
 void showMenu(FILE* fp, char* currentFileName)
 {
 	if (fp != NULL)
