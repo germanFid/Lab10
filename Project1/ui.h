@@ -3,10 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 #include "file.h"
 
-#define MENU_CHOICES_NUM 5
+#define MENU_CHOICES_NUM 6
+#define MOD_CHOICES_NUM 9
+
+#define UNLEN 256
+
 #define PATH_DEFAULT_SIZE 250
 #define GETSTRING_ERR_RE -1
 #define GETSTRING_ERR_OVERFLOW -2
@@ -102,6 +107,13 @@ void displayFileHandler(FILE* ptr, char* filename)
 	{
 		ptr = openFileHandler(filename);
 		fileOpenedFlag = 1;
+
+		if (ptr == NULL)
+		{
+			printf("\033[31mOpertaion Failed!\033[0m\n");
+			waitForKey();
+			return;
+		}
 	}
 
 	system("cls");
@@ -191,8 +203,125 @@ void writeFileHandler(FILE* ptr, char* filename)
 	}
 }
 
-void showMenu(FILE* fp, char* currentFileName)
+void getUserNameHandler(char* username)
 {
+	DWORD ln = UNLEN + 1;
+	GetUserName(username, &ln);
+}
+
+void modifySecurityAttributesHandler(FILE* ptr, char* filename, char* currentUserName)
+{
+	int fileOpenedFlag = 0;
+	if (ptr == NULL)
+	{
+		ptr = openFileHandler(filename);
+		fileOpenedFlag = 1;
+
+		if (ptr == NULL)
+		{
+			printf("File can't be opened, trying to modify parameters without precheck!\n");
+			waitForKey();
+		}
+	}
+
+	if (ptr != NULL)
+	{
+		fclose(ptr); // close file for proper rights modification
+		ptr = NULL;
+	}
+
+	system("cls");
+	
+	printf("------------\nCurrent File: %s\n------------\n", filename);
+	printf("Select operation type:\n"
+	"1. Grant all rights to the current user\n"
+	"2. Revoke all rights\n"
+	"3. Grant read permission\n"
+	"4. Revoke read permission\n"
+	"5. Grant write permission\n"
+	"6. Revoke wrie permission\n"
+	"7. Grant delete permission\n"
+	"8. Revoke delete permission\n"
+	"99. Exit to main menu\n\n>");
+
+	int choices[] = { 1, 2, 3, 4, 5, 6, 7, 8, 99 };
+	int choice;
+
+	DWORD GENERIC_TYPE;
+	DWORD ACCESS_TYPE;
+
+	do
+	{
+		choice = getIntChoice(MOD_CHOICES_NUM, choices);
+
+		switch (choice)
+		{
+		case 1:
+			GENERIC_TYPE = GENERIC_ALL;
+			ACCESS_TYPE = SET_ACCESS;
+			break;
+
+		case 2:
+			GENERIC_TYPE = GENERIC_ALL;
+			ACCESS_TYPE = DENY_ACCESS;
+			break;
+
+		case 3:
+			GENERIC_TYPE = GENERIC_READ;
+			ACCESS_TYPE = SET_ACCESS;
+			break;
+
+		case 4:
+			GENERIC_TYPE = GENERIC_READ;
+			ACCESS_TYPE = DENY_ACCESS;
+			break;
+		
+		case 5:
+			GENERIC_TYPE = GENERIC_WRITE;
+			ACCESS_TYPE = SET_ACCESS;
+			break;
+
+		case 6:
+			GENERIC_TYPE = GENERIC_WRITE;
+			ACCESS_TYPE = DENY_ACCESS;
+			break;
+
+		case 7:
+			GENERIC_TYPE = DELETE;
+			ACCESS_TYPE = SET_ACCESS;
+			break;
+
+		case 8:
+			GENERIC_TYPE = DELETE;
+			ACCESS_TYPE = DENY_ACCESS;
+			break;
+
+		case 99:
+			waitForKey();
+			return;
+			break;
+
+		default:
+			printf("incorrect input!\n\n>");
+			break;
+		}
+		
+	} while (choice == -1);
+
+	DWORD result = AddAceToObjectsSecurityDescriptor(TEXT(filename), SE_FILE_OBJECT, TEXT(currentUserName), TRUSTEE_IS_NAME, GENERIC_TYPE, ACCESS_TYPE, NO_INHERITANCE);
+
+	if (result == 0L)
+	{
+		printf("\033[32mSUCCESS!\033[0m\n");
+	}
+
+	else printf("\033[31mOpertaion Failed!\033[0m\n");
+	waitForKey();
+}
+
+void showMenu(FILE* fp, char* currentFileName, char* currentUserName)
+{
+	printf("Welcome, \033[35m%s\033[0m!\n", currentUserName);
 	if (fp != NULL)
 	{
 		printf("------------\nCurrent File: %s\n------------\n", currentFileName);
@@ -207,6 +336,7 @@ void showMenu(FILE* fp, char* currentFileName)
 		"1. Create/Open file\n"
 		"2. Read file\n"
 		"3. Write string to file\n"
-		"4. Change security attributes of the file\n"
+		"4. Change security attributes of the file (current file will be closed!)\n"
+		"5. Close current file\n"
 		"99. Exit\n\n>");
 }
