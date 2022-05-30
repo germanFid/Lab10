@@ -51,7 +51,7 @@ FILE* openFile(char* filename)
 		}
 	}
 	
-	printf("SUCCESS!\n");
+	printf("\033[32mSUCCESS!\033[0m\n");
 	return fp;
 }
 
